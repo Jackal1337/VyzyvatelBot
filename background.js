@@ -3,18 +3,15 @@ console.log('Vyzyvatel Auto-Answer background service worker loaded');
 
 // AI Model Fallback Chains (try in order if one fails)
 const TEXT_MODEL_CHAIN = [
-  'llama-3.3-70b-versatile',      // Primary: Latest and best
-  'llama-3.1-70b-versatile',      // Fallback 1: Previous version
-  'llama3-70b-8192',              // Fallback 2: Older stable
-  'mixtral-8x7b-32768',           // Fallback 3: Mixtral
-  'gemma2-9b-it'                  // Fallback 4: Lighter model
+  'llama-3.3-70b-versatile',      // Primary: Latest and best (280 tokens/sec)
+  'llama-3.1-8b-instant',         // Fallback 1: Fast and efficient (560 tokens/sec)
+  'openai/gpt-oss-120b',          // Fallback 2: OpenAI GPT (500 tokens/sec)
+  'qwen/qwen3-32b'                // Fallback 3: Qwen 3 (preview)
 ];
 
 const VISION_MODEL_CHAIN = [
-  'meta-llama/llama-4-scout-17b-16e-instruct', // Try experimental Llama 4 Scout
-  'llama-3.2-90b-vision-preview',               // Fallback 1: Llama 3.2 90B
-  'llama-3.2-11b-vision-preview',               // Fallback 2: Llama 3.2 11B
-  'llava-v1.5-7b-4096-preview'                  // Fallback 3: LLaVA (if available)
+  'meta-llama/llama-4-scout-17b-16e-instruct',    // Primary: Llama 4 Scout (128K context)
+  'meta-llama/llama-4-maverick-17b-128e-instruct' // Fallback: Llama 4 Maverick (128K context)
 ];
 
 // Helper function to convert blob to base64
