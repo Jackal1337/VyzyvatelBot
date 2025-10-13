@@ -11,8 +11,10 @@ const TEXT_MODEL_CHAIN = [
 ];
 
 const VISION_MODEL_CHAIN = [
-  'llama-3.2-90b-vision-preview', // Primary: Best vision
-  'llama-3.2-11b-vision-preview'  // Fallback: Lighter vision
+  'meta-llama/llama-4-scout-17b-16e-instruct', // Try experimental Llama 4 Scout
+  'llama-3.2-90b-vision-preview',               // Fallback 1: Llama 3.2 90B
+  'llama-3.2-11b-vision-preview',               // Fallback 2: Llama 3.2 11B
+  'llava-v1.5-7b-4096-preview'                  // Fallback 3: LLaVA (if available)
 ];
 
 // Helper function to convert blob to base64
@@ -51,8 +53,8 @@ async function callGroqAPIWithFallback(apiKey, messages, hasImage, maxRetries = 
           body: JSON.stringify({
             model: model,
             messages: messages,
-            temperature: hasImage ? 0.3 : 0.1,  // Higher temp for vision = more creative
-            max_tokens: hasImage ? 50 : 10
+            temperature: hasImage ? 0.5 : 0.1,  // Higher temp for vision = more creative/accurate
+            max_tokens: hasImage ? 100 : 10     // More tokens for vision to "think"
           })
         });
 
@@ -154,26 +156,47 @@ async function processQuestionWithAI(question, possibleAnswers, imageUrl, topicN
   if (possibleAnswers && possibleAnswers.length > 0) {
     // Multiple choice question
     if (hasImage && imageBase64) {
-      systemPrompt = `You are an expert visual recognition system specialized in quiz questions. When analyzing images:
+      systemPrompt = `You are an expert visual recognition AI specialized in quiz image analysis.
 
-CRITICAL VISION RULES:
-1. FLAGS: Look for horizontal/vertical stripes, stars, emblems, color patterns
-   - Count stripes carefully (horizontal vs vertical)
-   - Identify symbols (stars, crosses, emblems, crescents)
-   - Note exact colors and their positions
-2. LOGOS/BRANDS: Identify text, symbols, color schemes, brand elements
-3. PEOPLE/CELEBRITIES: Focus on facial features, context clues
-4. OBJECTS: Describe clearly what you see
-5. Use the topic/category as critical context (e.g., "Geography" = likely a flag/map)
+CRITICAL IDENTIFICATION RULES:
+
+🏳️ FLAGS:
+- Count horizontal/vertical stripes EXACTLY
+- Note stripe colors in order (top to bottom or left to right)
+- Identify ALL symbols (stars, crescents, crosses, emblems, coat of arms)
+- Common patterns: Scandinavian cross, Pan-African colors, Pan-Slavic colors
+- Compare ALL options carefully before answering
+
+👤 PEOPLE/CELEBRITIES:
+- CRITICAL: Check GENDER first (male/female facial structure, hair, clothing)
+- Look for distinctive features (eyes, nose, mouth, hair style, facial hair)
+- Consider age/era from photo quality and style
+- Check for visible text, watermarks, or context clues
+- If unsure of exact person, use process of elimination based on gender and age
+
+🎨 LOGOS/BRANDS:
+- Read ALL visible text carefully
+- Note color schemes and shapes
+- Look for brand-specific elements
+
+🔍 GENERAL APPROACH:
+1. Look at the image VERY carefully
+2. Use topic/category as crucial hint
+3. Compare image details to EACH option
+4. Eliminate impossible options first
+5. Choose the best match
 
 ANSWER FORMAT:
-- Respond with ONLY the exact text of the correct answer from options
-- Do NOT add explanations or extra text
-- Match the option text EXACTLY
+Output ONLY the exact option text. No explanations.`;
 
-If you're not 100% certain, use the topic context and visual clues to make the best educated guess from the given options.`;
+      userPrompt = `${contextPrefix}IMPORTANT: Look at this image VERY carefully. Pay special attention to details.
 
-      userPrompt = `${contextPrefix}Analyze this image carefully and answer:\n\nQuestion: ${question}\n\nOptions:\n${possibleAnswers.map((a, i) => `${i + 1}. ${a}`).join('\n')}\n\nBased on what you see in the image, which option is correct? Answer:`;
+Question: ${question}
+
+Available options:
+${possibleAnswers.map((a, i) => `${i + 1}. ${a}`).join('\n')}
+
+Which option matches what you see in the image? Answer with the EXACT option text:`;
     } else {
       systemPrompt = `You are a precise quiz answering system. When given a multiple choice question:
 1. Analyze the question carefully
