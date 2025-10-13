@@ -499,15 +499,32 @@ setTimeout(() => {
   });
 }, 1000);
 
-// Simple hash function for image URLs
-async function simpleHash(str) {
-  // Convert string to hash (for image URL)
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex.substring(0, 16); // Use first 16 chars for shorter key
+// Hash image content (not just URL) for proper caching
+async function hashImageContent(imageUrl) {
+  try {
+    // Download image
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+
+    // Convert to ArrayBuffer
+    const arrayBuffer = await blob.arrayBuffer();
+
+    // Hash the actual image bytes
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    return hashHex.substring(0, 16); // First 16 chars
+  } catch (error) {
+    console.warn('Failed to hash image content, falling back to URL hash:', error);
+    // Fallback: hash URL if image download fails
+    const encoder = new TextEncoder();
+    const data = encoder.encode(imageUrl);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex.substring(0, 16);
+  }
 }
 
 // Levenshtein distance for fuzzy string matching
@@ -750,9 +767,10 @@ async function checkForQuestion() {
     // FIRST: Check memory for known answer (include image hash in cache key if present)
     let cacheKey = questionText;
     if (imageUrl) {
-      // Create hash from image URL (simple but effective)
-      const imageHash = await simpleHash(imageUrl);
+      // Hash actual image content (not just URL) for accurate caching
+      const imageHash = await hashImageContent(imageUrl);
       cacheKey = `${questionText}|||IMG:${imageHash}`;
+      console.log('🖼️ Image hash:', imageHash.substring(0, 8) + '...');
     }
 
     const cachedData = getFromMemory(cacheKey);

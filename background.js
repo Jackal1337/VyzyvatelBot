@@ -51,7 +51,7 @@ async function callGroqAPIWithFallback(apiKey, messages, hasImage, maxRetries = 
           body: JSON.stringify({
             model: model,
             messages: messages,
-            temperature: 0.1,
+            temperature: hasImage ? 0.3 : 0.1,  // Higher temp for vision = more creative
             max_tokens: hasImage ? 50 : 10
           })
         });
@@ -154,16 +154,26 @@ async function processQuestionWithAI(question, possibleAnswers, imageUrl, topicN
   if (possibleAnswers && possibleAnswers.length > 0) {
     // Multiple choice question
     if (hasImage && imageBase64) {
-      systemPrompt = `You are a precise quiz answering system with vision capabilities. When given a multiple choice question with an image:
-1. Carefully analyze the image provided
-2. Read and understand the question
-3. Use the topic/category as context to better understand what the question is asking about
-4. Select the ONE correct answer from the provided options based on what you see in the image
-5. Respond with ONLY the exact text of the correct answer
-6. Do NOT add any explanations, punctuation, or extra text
-7. Output ONLY the answer text exactly as it appears in the options`;
+      systemPrompt = `You are an expert visual recognition system specialized in quiz questions. When analyzing images:
 
-      userPrompt = `${contextPrefix}Look at the image and answer this question:\n\nQuestion: ${question}\n\nOptions:\n${possibleAnswers.map((a, i) => `${i + 1}. ${a}`).join('\n')}\n\nAnswer:`;
+CRITICAL VISION RULES:
+1. FLAGS: Look for horizontal/vertical stripes, stars, emblems, color patterns
+   - Count stripes carefully (horizontal vs vertical)
+   - Identify symbols (stars, crosses, emblems, crescents)
+   - Note exact colors and their positions
+2. LOGOS/BRANDS: Identify text, symbols, color schemes, brand elements
+3. PEOPLE/CELEBRITIES: Focus on facial features, context clues
+4. OBJECTS: Describe clearly what you see
+5. Use the topic/category as critical context (e.g., "Geography" = likely a flag/map)
+
+ANSWER FORMAT:
+- Respond with ONLY the exact text of the correct answer from options
+- Do NOT add explanations or extra text
+- Match the option text EXACTLY
+
+If you're not 100% certain, use the topic context and visual clues to make the best educated guess from the given options.`;
+
+      userPrompt = `${contextPrefix}Analyze this image carefully and answer:\n\nQuestion: ${question}\n\nOptions:\n${possibleAnswers.map((a, i) => `${i + 1}. ${a}`).join('\n')}\n\nBased on what you see in the image, which option is correct? Answer:`;
     } else {
       systemPrompt = `You are a precise quiz answering system. When given a multiple choice question:
 1. Analyze the question carefully
