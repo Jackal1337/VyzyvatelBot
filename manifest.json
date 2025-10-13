@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Vyzyvatel Auto-Answer",
+  "version": "1.0.0",
+  "description": "Automatically answers questions on vyzyvatel.com using AI",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://*.vyzyvatel.com/*",
+    "https://vyzyvatel.com/*",
+    "https://api.groq.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://vyzyvatel.com/*",
+        "https://*.vyzyvatel.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
