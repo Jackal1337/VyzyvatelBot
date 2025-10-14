@@ -226,20 +226,29 @@ CRITICAL RULES:
 7. NEVER say "The answer is..." - just the raw number
 
 EXTREMELY IMPORTANT - UNITS AND COMPLETE NUMBERS:
-1. READ THE QUESTION CAREFULLY for units!
-   - "Kolik TISÍC..." / "Kolik celých tisíc..." = answer in thousands (6, not 6000)
-   - "Kolik MILIONŮ..." / "Kolik celých milionů..." = answer in millions (12, not 12000000)
-   - "Kolik MILIARD..." / "Kolik celých miliard..." = answer in billions (540, not 540000000000)
-   - "v tisících", "v milionech", "v miliardách" = use that unit!
+⚠️ THE MOST CRITICAL RULE: ALWAYS MATCH THE UNITS IN THE QUESTION! ⚠️
+
+1. READ THE QUESTION CAREFULLY for units - ALWAYS LOOK FOR THESE KEYWORDS:
+   - "v tisících" / "Kolik TISÍC..." / "Kolik celých tisíc..." = answer in THOUSANDS (10, NOT 10000)
+   - "v milionech" / "Kolik MILIONŮ..." / "Kolik celých milionů..." = answer in MILLIONS (12, NOT 12000000)
+   - "v miliardách" / "Kolik MILIARD..." / "Kolik celých miliard..." = answer in BILLIONS (540, NOT 540000000000)
+   - "v tisících kilometrech" = answer in THOUSANDS of kilometers (10, NOT 10000)
+   - "v tisících metrech" = answer in THOUSANDS of meters
+   - "v milionech dolarů" = answer in MILLIONS of dollars
    - PAY ATTENTION TO "celých" - it means the same as without "celých"!
 
 2. If NO UNIT is specified:
    - Answer with THE COMPLETE FULL NUMBER
-   - "Kolik obyvatel..." = 1300000 (not 1.3)
-   - "Kolik zhlédnutí..." = 12543678 (not 12)
+   - "Kolik obyvatel..." = 1300000 (not 1.3 or 1300)
+   - "Kolik zhlédnutí..." = 12543678 (not 12 or 12543)
 
-3. DO NOT use shortcuts like "12M" or "12 million" or "6k"
-4. Match the units the question asks for!
+3. CALCULATION RULE:
+   - If real value is 10,200 km² and question asks "v tisících kilometrech": 10,200 ÷ 1,000 = 10
+   - If real value is 1,300,000 people and question asks "v milionech": 1,300,000 ÷ 1,000,000 = 1
+   - If real value is 540,000,000,000 and question asks "v miliardách": 540,000,000,000 ÷ 1,000,000,000 = 540
+
+4. DO NOT use shortcuts like "12M" or "12 million" or "6k" or "10.2k"
+5. Match the units EXACTLY as the question asks!
 
 Examples:
 Question: How many planets are in our solar system?
@@ -250,11 +259,15 @@ Your response: 10
 
 Question: Kolik tisíc lidí bylo ukřižováno?
 Your response: 6
-(Question says "kolik TISÍC" so answer in thousands!)
+(Real value: 6000 people. Question says "tisíc" → divide by 1000 → 6)
 
 Question: Kolik milionů obyvatel má Praha?
 Your response: 1
-(Question says "kolik MILIONŮ" so answer in millions!)
+(Real value: 1,300,000 people. Question says "milionů" → divide by 1,000,000 → 1)
+
+Question: Jaká je rozloha největšího mangrovového lesa v tisících kilometrech čtverečních?
+Your response: 10
+(Real value: 10,200 km². Question says "v tisících" → divide by 1000 → 10)
 
 Question: Kolik obyvatel má Praha?
 Your response: 1300000
@@ -266,12 +279,13 @@ Your response: 12543678
 
 Question: Kolik zhlédnutí v milionech má video?
 Your response: 12
-(Question says "v milionech" so answer in millions!)
+(Real value: 12,543,678 views. Question says "v milionech" → divide by 1,000,000 → 12)
 
 Question: Kolik celých miliard korun ukradl zloděj?
 Your response: 540
-(Question says "kolik celých MILIARD" so answer in billions - 540, NOT 540000000000!)
+(Real value: 540,000,000,000 crowns. Question says "miliard" → divide by 1,000,000,000 → 540)
 
+⚠️ CRITICAL: Always divide the real value by the unit multiplier (1000, 1000000, 1000000000)!
 IMPORTANT: Output format must be EXACTLY: [number in requested unit] - nothing before, nothing after!`;
 
     userPrompt = `${contextPrefix}Question: ${question}\n\nAnswer (complete full number only):`;
