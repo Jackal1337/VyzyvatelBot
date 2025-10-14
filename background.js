@@ -516,7 +516,13 @@ PHASE 1: QUESTION PARSING (Read 3 times!)
 - "Kolik obyvatel" = how many inhabitants → FULL NUMBER (1,300,000)
 - "Kolik zhlédnutí" = how many views → FULL NUMBER (12,543,678)
 - "Kolik filmů" = how many movies → COUNT (10)
-- "Ve kterém roce" = in which year → YEAR (1945)
+- "Ve kterém roce" = in which year → FULL YEAR (1945, 2024)
+
+🔵 DECADES (Special case for Czech questions):
+- "V jakých letech" (plural) + movie/event context → DECADE (60, 70, 80)
+- "60. léta" / "šedesátá léta" = 1960s → Answer: 60
+- "80. léta" / "osmdesátá léta" = 1980s → Answer: 80
+- NOT full years! (1968 ❌, 60 ✅)
 
 PHASE 2: UNIT CONVERSION CALCULATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -583,11 +589,58 @@ PHASE 3: COMMON NUMERIC QUESTION TYPES
 - Typical TV series: 1-15 seasons
 - Episodes per season: 6-24 episodes
 
-📅 DATES/YEARS:
+📅 DATES/YEARS/DECADES:
 - Ancient history: 3000 BC - 500 AD
 - Medieval: 500 - 1500
 - Modern: 1500 - 1900
 - Contemporary: 1900 - 2025
+
+⚠️ CRITICAL: DECADES FORMAT (Czech questions often use short form!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+When question asks "V jakých letech" (in which years) about movies/events in 20th century:
+
+🔴 DECADES (Short form) - Answer with DECADE NUMBER only:
+- "50. léta" / "50s" / "padesátá léta" = 1950-1959 → Answer: 50
+- "60. léta" / "60s" / "šedesátá léta" = 1960-1969 → Answer: 60
+- "70. léta" / "70s" / "sedmdesátá léta" = 1970-1979 → Answer: 70
+- "80. léta" / "80s" / "osmdesátá léta" = 1980-1989 → Answer: 80
+- "90. léta" / "90s" / "devadesátá léta" = 1990-1999 → Answer: 90
+
+🟢 FULL YEARS - Answer with complete year:
+- "Ve kterém roce" (in which year) → Answer: 1968, 1989, 2015, etc.
+- Specific year questions → Answer: full 4-digit year
+
+DETECTION RULES:
+1. If question asks "V jakých letech" (plural - "years") + movie/event context → likely DECADES
+2. If question asks "Ve kterém roce" (singular - "year") → FULL YEAR
+3. If context is "film se odehrává" (film takes place) → likely asking for decade or time period
+
+EXAMPLES:
+
+Example: "V jakých letech se odehrává film Vlny?"
+- Film Vlny (2024) takes place in 1960s
+- Question asks "V jakých letech" (plural) → wants DECADE
+- 1960s = 60. léta → Answer: 60 ✅
+- NOT: 1968 ❌ (specific year)
+- NOT: 2000 ❌ (wrong era)
+
+Example: "Ve kterém roce byl natočen film Vlny?"
+- Film was made in 2024
+- Question asks "Ve kterém roce" (singular) → wants YEAR
+- Answer: 2024 ✅
+
+Example: "V jakých letech se odehrává seriál Stranger Things?"
+- Takes place in 1980s
+- Question asks "V jakých letech" (plural) → wants DECADE
+- Answer: 80 ✅
+
+Example: "Ve kterém roce skončila 2. světová válka?"
+- Specific year question
+- Answer: 1945 ✅
+
+⚠️ KEY DISTINCTION:
+- "V jakých letech" (PLURAL) = DECADE (60, 70, 80)
+- "Ve kterém roce" (SINGULAR) = FULL YEAR (1968, 1989)
 
 💰 ECONOMIC NUMBERS:
 - GDP: typically in billions or trillions
@@ -604,12 +657,15 @@ PHASE 4: ADVERSARIAL CHECKS (Avoid mistakes!)
 4. ❌ Is my answer way too big or too small? → Sanity check the magnitude
 5. ❌ Did I add commas or formatting? → Remove ALL formatting
 6. ❌ Did I add text like "approximately"? → Numbers ONLY
+7. ❌ Did I confuse decades with years? → Check "V jakých letech" (plural) vs "Ve kterém roce" (singular)
 
 SANITY CHECK EXAMPLES:
 - Prague population in millions: 1 ✅ (not 1300000 ❌)
 - Mangrove forest area in thousands km²: 10 ✅ (not 10200 ❌)
 - Saw movies count: 10 ✅ (seems reasonable for franchise)
 - World population: 8000000000 ✅ (about right for 2024)
+- Film in 1960s, question asks "V jakých letech": 60 ✅ (not 1968 ❌, not 2000 ❌)
+- Film released in 2024, question asks "Ve kterém roce": 2024 ✅ (not 24 ❌)
 
 PHASE 5: OUTPUT FORMATTING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
