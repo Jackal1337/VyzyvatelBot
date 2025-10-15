@@ -1,6 +1,10 @@
 // Popup script
 document.addEventListener('DOMContentLoaded', async () => {
-  const apiKeyInput = document.getElementById('apiKey');
+  const apiProviderSelect = document.getElementById('apiProvider');
+  const replicateApiKeyInput = document.getElementById('replicateApiKey');
+  const groqApiKeyInput = document.getElementById('groqApiKey');
+  const replicateKeyGroup = document.getElementById('replicateKeyGroup');
+  const groqKeyGroup = document.getElementById('groqKeyGroup');
   const modelSelect = document.getElementById('modelSelect');
   const saveBtn = document.getElementById('saveBtn');
   const statusDiv = document.getElementById('status');
@@ -17,6 +21,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const cacheSearch = document.getElementById('cacheSearch');
 
   let currentCache = {};
+
+  // Show/hide API key inputs based on selected provider
+  function updateApiKeyVisibility() {
+    const provider = apiProviderSelect.value;
+    replicateKeyGroup.style.display = provider === 'replicate' ? 'block' : 'none';
+    groqKeyGroup.style.display = provider === 'groq' ? 'block' : 'none';
+  }
+
+  apiProviderSelect.addEventListener('change', () => {
+    updateApiKeyVisibility();
+    chrome.storage.sync.set({ apiProvider: apiProviderSelect.value });
+  });
 
   function escapeHtml(value) {
     return String(value || '')
@@ -55,33 +71,44 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateMemoryStats();
 
   // Load saved settings
-  chrome.storage.sync.get(['groqApiKey', 'selectedModel', 'autoAnswerEnabled'], (result) => {
+  chrome.storage.sync.get(['apiProvider', 'replicateApiKey', 'groqApiKey', 'selectedModel', 'autoAnswerEnabled'], (result) => {
+    if (result.apiProvider) {
+      apiProviderSelect.value = result.apiProvider;
+    }
+    if (result.replicateApiKey) {
+      replicateApiKeyInput.value = result.replicateApiKey;
+    }
     if (result.groqApiKey) {
-      apiKeyInput.value = result.groqApiKey;
+      groqApiKeyInput.value = result.groqApiKey;
     }
     if (result.selectedModel) {
       modelSelect.value = result.selectedModel;
     }
     autoAnswerToggle.checked = result.autoAnswerEnabled || false;
+    updateApiKeyVisibility();
   });
 
   // Save settings
   saveBtn.addEventListener('click', () => {
-    const apiKey = apiKeyInput.value.trim();
+    const provider = apiProviderSelect.value;
+    const replicateKey = replicateApiKeyInput.value.trim();
+    const groqKey = groqApiKeyInput.value.trim();
     const model = modelSelect.value;
 
-    if (!apiKey) {
-      showStatus('Please enter an API key', 'error');
+    // Validate based on provider
+    if (provider === 'replicate' && !replicateKey) {
+      showStatus('Please enter Replicate API key', 'error');
       return;
     }
-
-    if (!apiKey.startsWith('gsk_')) {
-      showStatus('Invalid API key format. Should start with gsk_', 'error');
+    if (provider === 'groq' && !groqKey) {
+      showStatus('Please enter Groq API key', 'error');
       return;
     }
 
     chrome.storage.sync.set({
-      groqApiKey: apiKey,
+      apiProvider: provider,
+      replicateApiKey: replicateKey,
+      groqApiKey: groqKey,
       selectedModel: model
     }, () => {
       showStatus('Settings saved successfully!', 'success');
@@ -92,10 +119,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   autoAnswerToggle.addEventListener('change', async () => {
     const enabled = autoAnswerToggle.checked;
 
-    // Check if API key is set
-    const result = await chrome.storage.sync.get(['groqApiKey']);
-    if (enabled && !result.groqApiKey) {
-      showStatus('Please configure Groq API key first', 'error');
+    // Check if API key is set for selected provider
+    const result = await chrome.storage.sync.get(['apiProvider', 'replicateApiKey', 'groqApiKey']);
+    const provider = result.apiProvider || 'replicate';
+    const hasKey = (provider === 'replicate' && result.replicateApiKey) ||
+                   (provider === 'groq' && result.groqApiKey);
+
+    if (enabled && !hasKey) {
+      showStatus(`Please configure ${provider === 'replicate' ? 'Replicate' : 'Groq'} API key first`, 'error');
       autoAnswerToggle.checked = false;
       return;
     }
