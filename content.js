@@ -529,12 +529,20 @@ function getFromMemory(question) {
   const key = normalizeQuestion(question);
   const memory = questionMemory[key];
 
+  console.log('🔍 Cache lookup:', {
+    originalQuestion: question.substring(0, 60),
+    normalizedKey: key.substring(0, 60),
+    found: !!memory
+  });
+
   if (memory) {
     // Increment cache hits counter
     chrome.storage.local.get(['cacheHits'], (result) => {
       const hits = (result.cacheHits || 0) + 1;
       chrome.storage.local.set({ cacheHits: hits });
     });
+
+    console.log('✅ Cache HIT:', memory.answer);
 
     // Return answer with metadata
     return {
@@ -547,6 +555,7 @@ function getFromMemory(question) {
     };
   }
 
+  console.log('❌ Cache MISS - calling AI');
   return null;
 }
 

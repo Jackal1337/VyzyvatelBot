@@ -3,10 +3,10 @@ console.log('Vyzyvatel Auto-Answer background service worker loaded');
 
 // AI Model Fallback Chains (try in order if one fails)
 const TEXT_MODEL_CHAIN = [
-  'llama-3.3-70b-versatile',      // Primary: Latest and best (280 tokens/sec)
-  'llama-3.1-8b-instant',         // Fallback 1: Fast and efficient (560 tokens/sec)
-  'openai/gpt-oss-120b',          // Fallback 2: OpenAI GPT (500 tokens/sec)
-  'qwen/qwen3-32b'                // Fallback 3: Qwen 3 (preview)
+  'llama-3.1-8b-instant',         // Primary: FASTEST (560 tokens/sec) - best for quiz
+  'llama-3.3-70b-versatile',      // Fallback 1: More accurate but slower (280 tokens/sec)
+  'qwen/qwen3-32b',               // Fallback 2: Qwen 3 (preview)
+  'openai/gpt-oss-120b'           // Fallback 3: OpenAI GPT (500 tokens/sec)
 ];
 
 const VISION_MODEL_CHAIN = [
