@@ -1081,13 +1081,30 @@ function isPlayerTurn() {
 function enterNumericAnswer(numericAnswer) {
   let cleaned = numericAnswer.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
-  // Remove thousands separators (spaces, commas, dots between digits)
-  // But keep decimal point (dot after digits before more digits)
-  cleaned = cleaned.replace(/(\d)[\s,](?=\d)/g, '$1'); // Remove space/comma between digits
-  cleaned = cleaned.replace(/(\d)\.(?=\d{3})/g, '$1'); // Remove dot if followed by exactly 3 digits (thousands)
+  // CRITICAL FIX: Handle European decimal format (13,8 → 13.8)
+  // First, detect if comma is likely a decimal separator (not thousands separator)
+  // Pattern: N,N where N has 1-3 digits after comma = decimal
+  // Pattern: N,NNN where N has exactly 3 digits after comma = thousands separator
+
+  const hasDecimalComma = /\d+,\d{1,2}(?!\d)/.test(cleaned); // e.g., "13,8" or "3,14" (not "1,000")
+
+  if (hasDecimalComma) {
+    // Replace comma with dot for decimal (13,8 → 13.8)
+    cleaned = cleaned.replace(/(\d+),(\d{1,2})(?!\d)/g, '$1.$2');
+    console.log('🔢 Converted decimal comma to dot:', cleaned);
+  }
+
+  // Remove thousands separators (spaces, dots) but keep decimal point
+  cleaned = cleaned.replace(/(\d)\s(?=\d)/g, '$1'); // Remove spaces between digits
+  cleaned = cleaned.replace(/(\d)\.(?=\d{3}(?!\d))/g, '$1'); // Remove dot if followed by exactly 3 digits (thousands)
+
+  // Also remove commas used as thousands separators (e.g., "1,000,000")
+  cleaned = cleaned.replace(/(\d),(?=\d{3}(?!\d))/g, '$1');
 
   const numberMatch = cleaned.match(/(-?\d+\.?\d*)/);
   const cleanNumber = numberMatch ? numberMatch[1] : cleaned;
+
+  console.log('🔢 Final number:', cleanNumber);
 
   const inputField = document.querySelector('input#calculator-input') ||
                      document.querySelector('input[inputmode="decimal"]') ||

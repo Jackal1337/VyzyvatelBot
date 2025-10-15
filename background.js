@@ -490,6 +490,9 @@ PHASE 1: QUESTION PARSING (Read 3 times!)
 1. Read the ENTIRE question slowly
 2. Identify what is being asked (count, date, measurement, etc.)
 3. Extract the EXACT unit from the question
+4. Check for rounding keywords:
+   - "zaokrouhleně" / "zhruba" / "přibližně" / "approximately" → MUST round to integer
+   - "celých" (whole) → MUST use integer (no decimals)
 
 ⚠️ CRITICAL UNIT DETECTION - Look for these EXACT phrases:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -674,17 +677,27 @@ PHASE 5: OUTPUT FORMATTING
 ✅ DO:
 - Output ONLY the number
 - Use integers (no decimals unless explicitly needed)
-- Round to nearest whole number if needed
+- If question says "zaokrouhleně" / "zhruba" / "přibližně" / "approximately" → ROUND to whole number (13.8 → 14)
+- If decimals are needed, use DOT (not comma): 13.8 ✅, NOT 13,8 ❌
 
 ❌ DO NOT:
 - Add ANY text ("The answer is", "approximately", "about", etc.)
 - Add commas (1,000,000 → 1000000)
-- Add periods/dots (except as decimal point if needed)
+- Use comma as decimal separator (13,8 ❌ → use 13.8 ✅)
 - Add units (km, meters, dollars, etc.)
 - Use scientific notation (1e6)
 - Use shortcuts (12M, 6k, 1.3B)
 - Add <think> tags or formatting
 - Add explanations
+
+⚠️ DECIMAL SEPARATOR CRITICAL RULE:
+- ALWAYS use DOT (.) as decimal separator
+- NEVER use comma (,) as decimal separator
+- Examples:
+  - 13.8 ✅ (correct)
+  - 13,8 ❌ (WRONG - will be parsed as 138!)
+  - 3.14 ✅ (correct)
+  - 3,14 ❌ (WRONG - will be parsed as 314!)
 
 CORRECT FORMATS:
 ✅ 10
@@ -692,14 +705,16 @@ CORRECT FORMATS:
 ✅ 540
 ✅ 8
 ✅ 1945
+✅ 13.8 (if decimal needed - DOT not comma!)
+✅ 3.14 (if decimal needed - DOT not comma!)
 
 WRONG FORMATS:
 ❌ "10" (quotes)
 ❌ The answer is 10
-❌ 10,000 (comma)
+❌ 10,000 (comma as thousands separator)
+❌ 13,8 (comma as decimal separator - use 13.8 instead!)
 ❌ 10 thousand
 ❌ ~10 (approximation symbol)
-❌ 10.2 (decimal when integer expected)
 ❌ 1.3M (shortcut)
 
 PHASE 6: TOPIC CONTEXT UTILIZATION
