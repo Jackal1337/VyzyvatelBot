@@ -502,12 +502,34 @@
       background: #252f3f;
     }
 
+    .cache-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
     .cache-question {
       font-size: 13px;
       font-weight: 600;
       color: #e2e8f0;
-      margin-bottom: 8px;
       line-height: 1.5;
+      flex: 1;
+    }
+
+    .cache-image {
+      flex-shrink: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #334155;
+      background: #0f172a;
+    }
+
+    .cache-image img {
+      display: block;
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
     }
 
     .cache-answer {

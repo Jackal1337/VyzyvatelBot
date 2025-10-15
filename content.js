@@ -8,6 +8,9 @@ let questionMemory = {}; // In-memory cache of question -> answer mapping
 let currentQuestion = null; // Track current question for result detection
 let currentAnswer = null; // Track current answer for result detection
 let currentCacheKey = null; // Track cache key (question + image URL if present)
+let currentImageData = null; // Track current question image as data URL
+let currentImageUrl = null; // Track current question image URL
+let currentImageHash = null; // Track current image hash for caching
 let waitingForResult = false; // Flag to indicate we're waiting for answer result
 
 // Extension ready on load
@@ -65,18 +68,27 @@ function detectAnswerResult() {
     if (currentQuestion) {
       const ourAnswer = normalizeAnswer(currentAnswer);
       const uiAnswer = normalizeAnswer(correctAnswerFromUI);
+      const memoryOptions = {
+        questionText: currentQuestion,
+        imageData: currentImageData,
+        imageUrl: currentImageUrl,
+        imageHash: currentImageHash
+      };
 
       if (ourAnswer === uiAnswer) {
         console.log('✅');
-        saveToMemory(currentCacheKey, correctAnswerFromUI, true);
+        saveToMemory(currentCacheKey, correctAnswerFromUI, true, memoryOptions);
       } else {
         console.log('❌ → ' + correctAnswerFromUI);
-        saveToMemory(currentCacheKey, correctAnswerFromUI, true);
+        saveToMemory(currentCacheKey, correctAnswerFromUI, true, memoryOptions);
       }
 
       currentQuestion = null;
       currentAnswer = null;
       currentCacheKey = null;
+      currentImageData = null;
+      currentImageUrl = null;
+      currentImageHash = null;
     }
     return; // Don't start observer
   }
@@ -192,18 +204,27 @@ function detectAnswerResult() {
         // Check if our answer matches the correct one
         const ourAnswer = normalizeAnswer(currentAnswer);
         const uiAnswer = normalizeAnswer(correctAnswerFromUI);
+        const memoryOptions = {
+          questionText: currentQuestion,
+          imageData: currentImageData,
+          imageUrl: currentImageUrl,
+          imageHash: currentImageHash
+        };
 
         if (ourAnswer === uiAnswer) {
           console.log('✅');
-          saveToMemory(currentCacheKey, correctAnswerFromUI, true);
+          saveToMemory(currentCacheKey, correctAnswerFromUI, true, memoryOptions);
         } else {
           console.log('❌ → ' + correctAnswerFromUI);
-          saveToMemory(currentCacheKey, correctAnswerFromUI, true);
+          saveToMemory(currentCacheKey, correctAnswerFromUI, true, memoryOptions);
         }
 
         currentQuestion = null;
         currentAnswer = null;
         currentCacheKey = null;
+        currentImageData = null;
+        currentImageUrl = null;
+        currentImageHash = null;
       }
       resultObserver.disconnect();
     } else if (orangeOutlineButton) {
@@ -214,6 +235,12 @@ function detectAnswerResult() {
       waitingForResult = false;
 
       if (currentQuestion) {
+        const memoryOptions = {
+          questionText: currentQuestion,
+          imageData: currentImageData,
+          imageUrl: currentImageUrl,
+          imageHash: currentImageHash
+        };
         if (currentAnswer) {
           // Check if our answer matches the correct one
           const ourAnswer = normalizeAnswer(currentAnswer);
@@ -221,19 +248,22 @@ function detectAnswerResult() {
 
           if (ourAnswer === uiAnswer) {
             console.log('✅');
-            saveToMemory(currentCacheKey, correctAnswerFromUI, true);
+            saveToMemory(currentCacheKey, correctAnswerFromUI, true, memoryOptions);
           } else {
             console.log('❌ → ' + correctAnswerFromUI);
-            saveToMemory(currentCacheKey, correctAnswerFromUI, true);
+            saveToMemory(currentCacheKey, correctAnswerFromUI, true, memoryOptions);
           }
         } else {
           // No current answer tracked, but found correct answer - save it
-          saveToMemory(currentCacheKey, correctAnswerFromUI, true);
+          saveToMemory(currentCacheKey, correctAnswerFromUI, true, memoryOptions);
         }
 
         currentQuestion = null;
         currentAnswer = null;
         currentCacheKey = null;
+        currentImageData = null;
+        currentImageUrl = null;
+        currentImageHash = null;
       }
       resultObserver.disconnect();
     } else if (incorrectIndicator) {
@@ -241,6 +271,9 @@ function detectAnswerResult() {
       currentQuestion = null;
       currentAnswer = null;
       currentCacheKey = null;
+      currentImageData = null;
+      currentImageUrl = null;
+      currentImageHash = null;
       resultObserver.disconnect();
     }
   });
@@ -256,6 +289,9 @@ function detectAnswerResult() {
   const savedQuestion = currentQuestion;
   const savedAnswer = currentAnswer;
   const savedCacheKey = currentCacheKey;
+  const savedImageData = currentImageData;
+  const savedImageUrl = currentImageUrl;
+  const savedImageHash = currentImageHash;
 
   // Try checking at 3s, 6s, 9s, 12s, 15s
   const checkAttempts = [3000, 6000, 9000, 12000, 15000];
@@ -274,11 +310,20 @@ function detectAnswerResult() {
       const arrowDiv = finalCheck.querySelector('div.absolute');
       if (arrowDiv) arrowDiv.remove();
       const correctAnswerFromUI = finalCheck.textContent.trim();
-      saveToMemory(savedCacheKey, correctAnswerFromUI, true);
+      const memoryOptions = {
+        questionText: savedQuestion,
+        imageData: savedImageData,
+        imageUrl: savedImageUrl,
+        imageHash: savedImageHash
+      };
+      saveToMemory(savedCacheKey, correctAnswerFromUI, true, memoryOptions);
       waitingForResult = false;
       currentQuestion = null;
       currentAnswer = null;
       currentCacheKey = null;
+      currentImageData = null;
+      currentImageUrl = null;
+      currentImageHash = null;
       resultObserver.disconnect();
       return;
     }
@@ -301,11 +346,20 @@ function detectAnswerResult() {
     if (yellowBorderButtons.length > 0) {
       const textElement = yellowBorderButtons[0].querySelector('p.select-none, p.font-semibold, p');
       const correctAnswer = textElement ? textElement.textContent.trim() : yellowBorderButtons[0].textContent.trim();
-      saveToMemory(savedCacheKey, correctAnswer, true);
+      const memoryOptions = {
+        questionText: savedQuestion,
+        imageData: savedImageData,
+        imageUrl: savedImageUrl,
+        imageHash: savedImageHash
+      };
+      saveToMemory(savedCacheKey, correctAnswer, true, memoryOptions);
       waitingForResult = false;
       currentQuestion = null;
       currentAnswer = null;
       currentCacheKey = null;
+      currentImageData = null;
+      currentImageUrl = null;
+      currentImageHash = null;
       resultObserver.disconnect();
       return;
     }
@@ -316,6 +370,9 @@ function detectAnswerResult() {
       currentQuestion = null;
       currentAnswer = null;
       currentCacheKey = null;
+      currentImageData = null;
+      currentImageUrl = null;
+      currentImageHash = null;
       resultObserver.disconnect();
     }
   };
@@ -352,16 +409,38 @@ function normalizeAnswer(answer) {
   return normalized;
 }
 
-function saveToMemory(question, answer, wasCorrect = true) {
-  const key = normalizeQuestion(question);
+function saveToMemory(question, answer, wasCorrect = true, options = {}) {
+  const { imageData = null, imageUrl = null, questionText = null, imageHash = null } = options || {};
+  const rawKey = question;
+  const key = normalizeQuestion(rawKey);
   const existing = questionMemory[key];
 
+  const imageTagMatch = typeof rawKey === 'string' ? rawKey.match(/\|\|\|IMG:([a-f0-9]+)/i) : null;
+  const baseQuestionText = imageTagMatch ? rawKey.slice(0, imageTagMatch.index) : rawKey;
+  const derivedImageHash = imageTagMatch ? imageTagMatch[1].toLowerCase() : null;
+
+  const resolvedQuestionText = questionText || existing?.questionText || baseQuestionText;
+  const resolvedImageHash = imageHash || existing?.image?.hash || derivedImageHash;
+
+  let imageInfo = null;
+  if (imageData || imageUrl || resolvedImageHash || existing?.image) {
+    imageInfo = {
+      dataUrl: imageData || existing?.image?.dataUrl || null,
+      url: imageUrl || existing?.image?.url || null,
+      hash: resolvedImageHash || existing?.image?.hash || null
+    };
+
+    if (!imageInfo.dataUrl && !imageInfo.url && !imageInfo.hash) {
+      imageInfo = null;
+    }
+  }
+
   if (!existing) {
-    // New entry
-    questionMemory[key] = {
+    const entry = {
       answer: answer,
       timestamp: Date.now(),
       lastUsed: Date.now(),
+      questionText: resolvedQuestionText,
       stats: {
         timesUsed: 1,
         timesCorrect: wasCorrect ? 1 : 0,
@@ -374,20 +453,47 @@ function saveToMemory(question, answer, wasCorrect = true) {
         verified: wasCorrect
       }
     };
+
+    if (imageInfo) {
+      entry.image = imageInfo;
+    }
+
+    questionMemory[key] = entry;
   } else {
-    // Update existing entry
     existing.lastUsed = Date.now();
+    existing.questionText = resolvedQuestionText;
+
+    if (imageInfo) {
+      existing.image = imageInfo;
+    } else if (existing.image) {
+      delete existing.image;
+    }
+
+    if (!existing.stats) {
+      existing.stats = {
+        timesUsed: 0,
+        timesCorrect: 0,
+        timesWrong: 0,
+        healthScore: 1.0
+      };
+    }
+
     existing.stats.timesUsed++;
 
     if (wasCorrect) {
       existing.stats.timesCorrect++;
-      existing.confidence.score = Math.min(0.99, existing.confidence.score + 0.05);
+      if (!existing.confidence) {
+        existing.confidence = { score: 0.5, source: 'ai', verified: false };
+      }
+      existing.confidence.score = Math.min(0.99, (existing.confidence.score || 0.5) + 0.05);
       existing.confidence.verified = true;
     } else {
       existing.stats.timesWrong++;
-      existing.confidence.score = Math.max(0.1, existing.confidence.score - 0.2);
+      if (!existing.confidence) {
+        existing.confidence = { score: 0.5, source: 'ai', verified: false };
+      }
+      existing.confidence.score = Math.max(0.1, (existing.confidence.score || 0.5) - 0.2);
 
-      // If answer is different and we have low health, replace it
       if (existing.answer !== answer && existing.stats.healthScore < 0.5) {
         existing.answer = answer;
         existing.stats.timesCorrect = 1;
@@ -396,18 +502,15 @@ function saveToMemory(question, answer, wasCorrect = true) {
       }
     }
 
-    // Recalculate health score
     const total = existing.stats.timesCorrect + existing.stats.timesWrong;
     existing.stats.healthScore = total > 0 ? existing.stats.timesCorrect / total : 1.0;
 
-    // Auto-cleanup bad entries
     if (existing.stats.healthScore < 0.3 && existing.stats.timesUsed > 3) {
       console.log(`🗑️ Removing bad cache entry: ${key} (health: ${existing.stats.healthScore})`);
       delete questionMemory[key];
     }
   }
 
-  // Save to persistent storage
   chrome.storage.local.set({ questionMemory: questionMemory });
 }
 
@@ -427,7 +530,9 @@ function getFromMemory(question) {
       answer: memory.answer,
       confidence: memory.confidence?.score || 0.8,
       healthScore: memory.stats?.healthScore || 1.0,
-      timesUsed: memory.stats?.timesUsed || 1
+      timesUsed: memory.stats?.timesUsed || 1,
+      questionText: memory.questionText || question,
+      image: memory.image || null
     };
   }
 
@@ -499,25 +604,33 @@ setTimeout(() => {
   });
 }, 1000);
 
-// Hash image content (not just URL) for proper caching
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Hash image content (not just URL) for proper caching and thumbnail storage
 async function hashImageContent(imageUrl) {
   try {
-    // Download image
     const response = await fetch(imageUrl);
     const blob = await response.blob();
 
-    // Convert to ArrayBuffer
-    const arrayBuffer = await blob.arrayBuffer();
+    currentImageData = await blobToDataURL(blob);
 
-    // Hash the actual image bytes
+    const arrayBuffer = await blob.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    return hashHex.substring(0, 16); // First 16 chars
+    return hashHex.substring(0, 16);
   } catch (error) {
     console.warn('Failed to hash image content, falling back to URL hash:', error);
-    // Fallback: hash URL if image download fails
+    currentImageData = null;
+
     const encoder = new TextEncoder();
     const data = encoder.encode(imageUrl);
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -743,6 +856,16 @@ async function checkForQuestion() {
   const imageElement = questionContainer ? questionContainer.querySelector('img') : null;
   const imageUrl = imageElement ? (imageElement.src || imageElement.dataset.src) : null;
 
+  if (imageUrl) {
+    currentImageUrl = imageUrl;
+    currentImageData = null;
+    currentImageHash = null;
+  } else {
+    currentImageUrl = null;
+    currentImageData = null;
+    currentImageHash = null;
+  }
+
   // Detect question type
   const calculatorInput = document.querySelector('input#calculator-input') ||
                           document.querySelector('input[inputmode="decimal"]');
@@ -769,6 +892,7 @@ async function checkForQuestion() {
     if (imageUrl) {
       // Hash actual image content (not just URL) for accurate caching
       const imageHash = await hashImageContent(imageUrl);
+      currentImageHash = imageHash;
       cacheKey = `${questionText}|||IMG:${imageHash}`;
       console.log('🖼️ Image hash:', imageHash.substring(0, 8) + '...');
     }
@@ -847,6 +971,9 @@ async function checkForQuestion() {
     console.error('❌ Error:', error);
     updateStatus('Error occurred', 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)');
     lastQuestionText = '';
+    currentImageData = null;
+    currentImageUrl = null;
+    currentImageHash = null;
   } finally {
     setTimeout(() => {
       isProcessing = false;

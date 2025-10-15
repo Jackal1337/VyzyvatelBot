@@ -18,6 +18,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let currentCache = {};
 
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value).replace(/`/g, '&#96;');
+  }
+
+  function selectItemByKey(key) {
+    try {
+      return cacheList.querySelector(`[data-key="${CSS.escape(key)}"]`);
+    } catch (err) {
+      const items = cacheList.querySelectorAll('[data-key]');
+      return Array.from(items).find(el => el.dataset.key === key) || null;
+    }
+  }
+
   // Load and display memory stats
   function updateMemoryStats() {
     chrome.storage.local.get(['questionMemory', 'cacheHits'], (result) => {
@@ -115,7 +137,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filtered = entries.filter(([key, data]) => {
       if (!searchTerm) return true;
       const search = searchTerm.toLowerCase();
-      return key.includes(search) || data.answer.toLowerCase().includes(search);
+      const questionText = (data.questionText || key).toLowerCase();
+      const answerText = (data.answer || '').toLowerCase();
+      return questionText.includes(search) || answerText.includes(search);
     });
 
     if (filtered.length === 0) {
@@ -136,27 +160,40 @@ document.addEventListener('DOMContentLoaded', async () => {
       item.className = 'cache-item';
       item.dataset.key = key;
 
-      const question = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize first letter
+      const questionText = data.questionText || key.replace(/\|\|\|img:[a-f0-9]+/i, '');
+      const displayQuestion = escapeHtml(questionText);
+      const answerText = escapeHtml(data.answer || '');
       const lastUsed = data.lastUsed ? new Date(data.lastUsed).toLocaleString('cs-CZ') : 'Never';
+      const timesUsed = data.stats?.timesUsed ?? data.usedCount ?? 1;
+      const imageSource = data.image?.dataUrl || data.image?.url || null;
+      const imageHash = data.image?.hash ? ` • IMG ${escapeHtml(data.image.hash.slice(0, 8))}` : '';
 
-      item.innerHTML = `
-        <div class="cache-question">${question}</div>
-        <div class="cache-answer">${data.answer}</div>
+      const headerHtml = `
+        <div class="cache-header">
+          <div class="cache-question">${displayQuestion}</div>
+          ${imageSource ? `<div class="cache-image"><img src="${escapeAttr(imageSource)}" alt="Question image"></div>` : ''}
+        </div>
+      `;
+
+      const bodyHtml = `
+        <div class="cache-answer">${answerText}</div>
         <div class="cache-meta">
           <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Used ${data.usedCount || 1}x • Last: ${lastUsed}
+          Used ${timesUsed}x • Last: ${lastUsed}${imageHash}
         </div>
         <div class="cache-actions">
-          <button class="cache-btn cache-btn-edit" data-key="${key}">
+          <button class="cache-btn cache-btn-edit" data-key="${escapeAttr(key)}">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             Edit
           </button>
-          <button class="cache-btn cache-btn-delete" data-key="${key}">
+          <button class="cache-btn cache-btn-delete" data-key="${escapeAttr(key)}">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             Delete
           </button>
         </div>
       `;
+
+      item.innerHTML = headerHtml + bodyHtml;
 
       cacheList.appendChild(item);
     });
@@ -179,15 +216,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Edit cache item
   function editCacheItem(key) {
-    const item = cacheList.querySelector(`[data-key="${key}"]`);
+    const item = selectItemByKey(key);
     if (!item) return;
 
     const data = currentCache[key];
-    const question = key.charAt(0).toUpperCase() + key.slice(1);
+    const question = data.questionText || key.replace(/\|\|\|img:[a-f0-9]+/i, '');
+    const imageSource = data.image?.dataUrl || data.image?.url || null;
 
     item.innerHTML = `
-      <div class="cache-question">${question}</div>
-      <input type="text" class="cache-edit-input" id="editAnswer" value="${data.answer}" placeholder="Answer">
+      <div class="cache-header">
+        <div class="cache-question">${escapeHtml(question)}</div>
+        ${imageSource ? `<div class="cache-image"><img src="${escapeAttr(imageSource)}" alt="Question image"></div>` : ''}
+      </div>
+      <input type="text" class="cache-edit-input" id="editAnswer" value="${escapeAttr(data.answer || '')}" placeholder="Answer">
       <div class="cache-actions">
         <button class="cache-btn cache-btn-save">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
