@@ -921,6 +921,11 @@ async function checkForQuestion() {
       const confidencePercent = Math.round(cachedData.confidence * 100);
 
       console.log(`💾 ${finalAnswer} [${confidenceEmoji} ${confidencePercent}%]`);
+      console.log('🖼️ Cached - preserving image metadata:', {
+        hasImageData: !!currentImageData,
+        hasImageUrl: !!currentImageUrl,
+        hasImageHash: !!currentImageHash
+      });
       updateStatus(`Cached (${confidencePercent}%) 💰`, 'linear-gradient(135deg, #10b981 0%, #059669 100%)');
     } else {
       // Need to call AI - will cache result for next time
