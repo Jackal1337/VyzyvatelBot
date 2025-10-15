@@ -415,6 +415,13 @@ function saveToMemory(question, answer, wasCorrect = true, options = {}) {
   const key = normalizeQuestion(rawKey);
   const existing = questionMemory[key];
 
+  console.log('💾 saveToMemory DEBUG:', {
+    question: rawKey.substring(0, 50),
+    imageData: imageData ? 'YES (' + imageData.substring(0, 30) + '...)' : 'NO',
+    imageUrl: imageUrl ? 'YES (' + imageUrl.substring(0, 50) + '...)' : 'NO',
+    imageHash: imageHash || 'NO'
+  });
+
   const imageTagMatch = typeof rawKey === 'string' ? rawKey.match(/\|\|\|IMG:([a-f0-9]+)/i) : null;
   const baseQuestionText = imageTagMatch ? rawKey.slice(0, imageTagMatch.index) : rawKey;
   const derivedImageHash = imageTagMatch ? imageTagMatch[1].toLowerCase() : null;
@@ -433,6 +440,10 @@ function saveToMemory(question, answer, wasCorrect = true, options = {}) {
     if (!imageInfo.dataUrl && !imageInfo.url && !imageInfo.hash) {
       imageInfo = null;
     }
+
+    console.log('🖼️ Image info created:', imageInfo);
+  } else {
+    console.log('🖼️ No image info (all null)');
   }
 
   if (!existing) {
