@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const groqApiKeyInput = document.getElementById('groqApiKey');
   const replicateKeyGroup = document.getElementById('replicateKeyGroup');
   const groqKeyGroup = document.getElementById('groqKeyGroup');
-  const modelSelect = document.getElementById('modelSelect');
   const saveBtn = document.getElementById('saveBtn');
   const statusDiv = document.getElementById('status');
   const autoAnswerToggle = document.getElementById('autoAnswerToggle');
@@ -71,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateMemoryStats();
 
   // Load saved settings
-  chrome.storage.sync.get(['apiProvider', 'replicateApiKey', 'groqApiKey', 'selectedModel', 'autoAnswerEnabled'], (result) => {
+  chrome.storage.sync.get(['apiProvider', 'replicateApiKey', 'groqApiKey', 'autoAnswerEnabled'], (result) => {
     if (result.apiProvider) {
       apiProviderSelect.value = result.apiProvider;
     }
@@ -80,9 +79,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (result.groqApiKey) {
       groqApiKeyInput.value = result.groqApiKey;
-    }
-    if (result.selectedModel) {
-      modelSelect.value = result.selectedModel;
     }
     autoAnswerToggle.checked = result.autoAnswerEnabled || false;
     updateApiKeyVisibility();
@@ -93,7 +89,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const provider = apiProviderSelect.value;
     const replicateKey = replicateApiKeyInput.value.trim();
     const groqKey = groqApiKeyInput.value.trim();
-    const model = modelSelect.value;
 
     // Validate based on provider
     if (provider === 'replicate' && !replicateKey) {
@@ -108,8 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.storage.sync.set({
       apiProvider: provider,
       replicateApiKey: replicateKey,
-      groqApiKey: groqKey,
-      selectedModel: model
+      groqApiKey: groqKey
     }, () => {
       showStatus('Settings saved successfully!', 'success');
     });
