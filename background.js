@@ -212,16 +212,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function processQuestionWithAI(question, possibleAnswers, imageUrl, topicName) {
-  // Get API key from storage
-  const result = await chrome.storage.sync.get(['groqApiKey']);
-  const apiKey = result.groqApiKey;
+  // Get API provider and keys from storage
+  const result = await chrome.storage.sync.get(['apiProvider', 'replicateApiKey', 'groqApiKey', 'openrouterApiKey']);
+  const provider = result.apiProvider || 'replicate'; // Default to Replicate
   const hasImage = !!imageUrl;
 
-  if (!apiKey) {
-    throw new Error('Groq API key not configured. Please set it in the extension popup.');
+  // Get the appropriate API key
+  let apiKey;
+  if (provider === 'replicate') {
+    apiKey = result.replicateApiKey;
+  } else if (provider === 'groq') {
+    apiKey = result.groqApiKey;
+  } else if (provider === 'openrouter') {
+    apiKey = result.openrouterApiKey;
   }
 
-  console.log('🤖 Processing:', topicName ? `[${topicName}]` : '', question.substring(0, 60) + '...');
+  if (!apiKey) {
+    throw new Error(`${API_PROVIDERS[provider].name} API key not configured. Please set it in the extension popup.`);
+  }
+
+  console.log(`🤖 Processing with ${API_PROVIDERS[provider].name}:`, topicName ? `[${topicName}]` : '', question.substring(0, 60) + '...');
 
   // Download and convert image to base64 if present
   let imageBase64 = null;
@@ -874,14 +884,22 @@ YOU ARE THE BEST AT NUMERIC QUESTIONS. BE PRECISE. BE ACCURATE. CONVERT UNITS.
       });
     }
 
-    // Call AI with fallback chain and retry logic
-    const result = await callGroqAPIWithFallback(apiKey, messages, hasImage);
+    // Call AI based on selected provider
+    let result;
+    if (provider === 'replicate') {
+      result = await callReplicateAPI(apiKey, systemPrompt, userPrompt, hasImage, imageBase64);
+    } else if (provider === 'groq') {
+      result = await callGroqAPIWithFallback(apiKey, messages, hasImage);
+    } else if (provider === 'openrouter') {
+      // TODO: Implement OpenRouter
+      throw new Error('OpenRouter not yet implemented');
+    }
 
     if (!result.success) {
       throw new Error(result.error);
     }
 
-    console.log('✅ AI Response:', result.answer, `[${result.model}]`);
+    console.log(`✅ AI Response (${result.provider || provider}):`, result.answer, `[${result.model}]`);
     return result.answer;
   } catch (error) {
     console.error('Error calling OpenRouter API:', error);
