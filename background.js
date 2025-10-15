@@ -1,17 +1,45 @@
 // Background service worker
 console.log('Vyzyvatel Auto-Answer background service worker loaded');
 
-// AI Model Fallback Chains (try in order if one fails)
+// API Provider Configuration
+const API_PROVIDERS = {
+  replicate: {
+    name: 'Replicate',
+    baseUrl: 'https://api.replicate.com/v1',
+    textModels: ['openai/gpt-5-nano', 'openai/gpt-4.1-nano'],
+    visionModels: ['yorickvp/llava-13b', 'lucataco/moondream2'],
+    requiresAuth: true,
+    free: false
+  },
+  groq: {
+    name: 'Groq',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    textModels: ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile'],
+    visionModels: ['meta-llama/llama-4-scout-17b-16e-instruct', 'meta-llama/llama-4-maverick-17b-128e-instruct'],
+    requiresAuth: true,
+    free: true
+  },
+  openrouter: {
+    name: 'OpenRouter',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    textModels: ['openai/gpt-3.5-turbo', 'anthropic/claude-instant-1'],
+    visionModels: ['openai/gpt-4-vision-preview'],
+    requiresAuth: true,
+    free: false
+  }
+};
+
+// Legacy fallback chains (for Groq)
 const TEXT_MODEL_CHAIN = [
-  'llama-3.1-8b-instant',         // Primary: FASTEST (560 tokens/sec) - best for quiz
-  'llama-3.3-70b-versatile',      // Fallback 1: More accurate but slower (280 tokens/sec)
-  'qwen/qwen3-32b',               // Fallback 2: Qwen 3 (preview)
-  'openai/gpt-oss-120b'           // Fallback 3: OpenAI GPT (500 tokens/sec)
+  'llama-3.1-8b-instant',
+  'llama-3.3-70b-versatile',
+  'qwen/qwen3-32b',
+  'openai/gpt-oss-120b'
 ];
 
 const VISION_MODEL_CHAIN = [
-  'meta-llama/llama-4-scout-17b-16e-instruct',    // Primary: Llama 4 Scout (128K context)
-  'meta-llama/llama-4-maverick-17b-128e-instruct' // Fallback: Llama 4 Maverick (128K context)
+  'meta-llama/llama-4-scout-17b-16e-instruct',
+  'meta-llama/llama-4-maverick-17b-128e-instruct'
 ];
 
 // Helper function to convert blob to base64
@@ -25,6 +53,73 @@ function blobToBase64(blob) {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+// Replicate model versions (hash IDs from replicate.com/model/api)
+const REPLICATE_VERSIONS = {
+  'gpt-5-nano': '3e5e85c2393b64269755bdb0e900971f3d8b8f17736cfc46dc786629311c5030',
+  'llava-13b': '80537f9eead1a5bfa72d5ac6ea6414379be41d4d4f6679fd776e9535d1eb58bb' // Example - get real one
+};
+
+// Replicate API caller
+async function callReplicateAPI(apiKey, systemPrompt, userPrompt, hasImage, imageData = null) {
+  const modelName = hasImage ? 'llava-13b' : 'gpt-5-nano';
+  const version = REPLICATE_VERSIONS[modelName];
+
+  console.log(`🤖 Calling Replicate: ${modelName} (${version.substring(0, 8)}...)`);
+
+  let input;
+  if (hasImage && imageData) {
+    // LLaVA for vision
+    input = {
+      image: imageData, // Base64 or URL
+      prompt: `${systemPrompt}\n\n${userPrompt}`,
+      max_tokens: 100
+    };
+  } else {
+    // GPT-5-nano for text
+    input = {
+      prompt: `${systemPrompt}\n\n${userPrompt}`,
+      verbosity: 'low',
+      reasoning_effort: 'minimal'
+    };
+  }
+
+  const response = await fetch('https://api.replicate.com/v1/predictions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'wait=30' // Wait up to 30s for result
+    },
+    body: JSON.stringify({
+      version: version,
+      input: input
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Replicate API error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+
+  if (data.status === 'succeeded') {
+    // Replicate returns output as array or string
+    const answer = Array.isArray(data.output) ? data.output.join('') : data.output;
+    return {
+      success: true,
+      answer: answer.trim(),
+      model: model,
+      provider: 'replicate'
+    };
+  } else if (data.status === 'failed') {
+    throw new Error(`Replicate prediction failed: ${data.error}`);
+  } else {
+    // Still processing - shouldn't happen with Prefer: wait
+    throw new Error(`Replicate prediction still processing: ${data.status}`);
+  }
 }
 
 // Core API call with retry and fallback
