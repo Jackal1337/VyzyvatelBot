@@ -945,13 +945,23 @@ async function checkForQuestion() {
       }
 
       // Send to background script for AI processing
-      const response = await chrome.runtime.sendMessage({
-        action: 'processQuestion',
-        question: questionText,
-        answers: answers,
-        imageUrl: imageUrl, // Pass image URL if present
-        topic: topicName // Pass topic/category for better context
-      });
+      let response;
+      try {
+        response = await chrome.runtime.sendMessage({
+          action: 'processQuestion',
+          question: questionText,
+          answers: answers,
+          imageUrl: imageUrl, // Pass image URL if present
+          topic: topicName // Pass topic/category for better context
+        });
+      } catch (error) {
+        if (error.message.includes('Extension context invalidated')) {
+          console.error('🔄 Extension was reloaded. Please refresh this page (Ctrl+Shift+R)');
+          updateStatus('Extension reloaded - refresh page!', 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)');
+          return;
+        }
+        throw error;
+      }
 
       if (response.success && response.answer) {
         finalAnswer = response.answer;
